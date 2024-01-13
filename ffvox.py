@@ -13,14 +13,44 @@ class Tracker:
         self.end = "out.wav"
           
     def add_pattern(self, pattern: list):
-        self.raw_pattern.append(pattern)
+        """
+        Pattern structure
+        [[base_frequency, bese_lenght, base_velocity], 
+        [instrument, frequency, length, velocity, effect**, effect_value**],
+        [...],
+        ...]
+        Example:
+        [440,
+        [3/4, 2/3, 1/100, 0],
+        [1, 1, 100, 0]]
+        """
+        self.raw_pattern.extend(pattern)
     def add_inst(self, inst: str):
         self.raw_inst.append(inst)
+        return len(self.raw_inst) - 1
     def __eval(self):
         overwrite_tag = ""
         if self.overwrite:
             overwrite_tag = "-y "
-        expr_inst = "".join(["+".join(self.raw_inst), "\':"])
+        raw_expr = []
+        freq = 1
+        length = 1
+        velocity = 1
+        time_start = 0
+        time_end = 0
+        for n, line in enumerate(self.raw_pattern):
+            if n == 0:
+                freq = line[0]
+                length = line[1]
+                velocity = line[2]
+                continue
+            freq *= line[1]
+            length *= line[2]
+            velocity *= line[3]
+            time_end += length
+            raw_expr.append("".join([f"between(t, {time_start}, {time_end})*", self.raw_inst[line[0]]]))
+            time_start = time_end
+        expr_inst = "".join(["+".join(raw_expr), "\':"])
         duration = 0
         if self.duration == -1:
             #TBD: duration = lenght of track
