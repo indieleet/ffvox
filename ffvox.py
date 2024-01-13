@@ -1,5 +1,6 @@
 from os import system
 from shutil import which
+import re
 
 class Tracker:
     def __init__(self):
@@ -48,7 +49,8 @@ class Tracker:
             length *= line[2]
             velocity *= line[3]
             time_end += length
-            raw_expr.append("".join([f"between(t, {time_start}, {time_end})*", self.raw_inst[line[0]]]))
+            current_inst = re.sub(r"(?<!\w)freq(?!\w)", str(freq), self.raw_inst[line[0]])
+            raw_expr.append("".join([f"between(t, {time_start}, {time_end})*", current_inst]))
             time_start = time_end
         expr_inst = "".join(["+".join(raw_expr), "\':"])
         duration = 0
