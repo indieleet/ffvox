@@ -49,13 +49,16 @@ class Tracker:
             length *= line[2]
             velocity *= line[3]
             time_end += length
-            current_inst = re.sub(r"(?<!\w)freq(?!\w)", str(freq), self.raw_inst[line[0]])
+            current_inst = re.sub(r"(?<!\w)(f|freq|frequency)(?!\w)", str(freq), self.raw_inst[line[0]])
+            current_inst = re.sub(r"(?<!\w)(l|len|length)(?!\w)", str(length), current_inst)
+            current_inst = re.sub(r"(?<!\w)(v|vel|velocity)(?!\w)", str(velocity), current_inst)
             raw_expr.append("".join([f"between(t, {time_start}, {time_end})*", current_inst]))
             time_start = time_end
         expr_inst = "".join(["+".join(raw_expr), "\':"])
         duration = 0
         if self.duration == -1:
             #TBD: duration = lenght of track
+            self.duration = time_end
             pass
         elif self.duration > 0:
             duration = self.duration
@@ -70,5 +73,7 @@ class Tracker:
         self.__eval()
     def play(self):
         self.__eval()
-        if which("termux-media-player"):
+        if which("ffplay"):
+            system("ffplay out.wav")
+        elif which("termux-media-player"):
             system("termux-media-player play out.wav")
