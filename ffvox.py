@@ -41,7 +41,7 @@ class Tracker:
         if self.overwrite:
             overwrite_tag = "-y "
         raw_expr = []
-        patterns_length = []  
+        pattern_length = []  
         for current_pattern in self.raw_pattern:
             freq = 1
             length = 1
@@ -61,15 +61,17 @@ class Tracker:
                 current_inst = re.sub(r"(?<!\w)(f|freq|frequency)(?!\w)", str(freq), self.raw_inst[line[0]])
                 current_inst = re.sub(r"(?<!\w)(l|len|length)(?!\w)", str(length), current_inst)
                 current_inst = re.sub(r"(?<!\w)(v|vel|velocity)(?!\w)", str(velocity), current_inst)
+                current_inst = re.sub(r"(?<!\w)start(?!\w)", str(time_start), current_inst)
+                current_inst = re.sub(r"(?<!\w)end(?!\w)", str(time_end), current_inst)
                 raw_expr.append("".join([f"between(t, {time_start}, {time_end})*", current_inst]))
                 time_start = time_end
-            patterns_length.append(time_end)
+            pattern_length.append(time_end)
         expr_inst = "".join(["+".join(raw_expr), "\':"])
         duration = 0
-        if self.duration == -1:
-            self.duration = max(patterns_length)
-        elif self.duration > 0:
+        if self.duration > 0:
             duration = self.duration
+        elif self.duration == -1:
+            duration = max(pattern_length)
         expr = (f"{self.start}"
                 f"{overwrite_tag}"
                 f"{self.aeval_init}"
