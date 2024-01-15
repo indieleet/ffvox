@@ -12,6 +12,7 @@ class Tracker:
         self.overwrite = True
         self.duration = -1
         self.end = "out.wav"
+        self.volume = 1
           
     def add_pattern(self, pattern: list) -> int:
         """
@@ -61,9 +62,9 @@ class Tracker:
                 current_inst = re.sub(r"(?<!\w)(f|freq|frequency)(?!\w)", str(freq), self.raw_inst[line[0]])
                 current_inst = re.sub(r"(?<!\w)(l|len|length)(?!\w)", str(length), current_inst)
                 current_inst = re.sub(r"(?<!\w)(v|vel|velocity)(?!\w)", str(velocity), current_inst)
-                current_inst = re.sub(r"(?<!\w)start(?!\w)", str(time_start), current_inst)
-                current_inst = re.sub(r"(?<!\w)end(?!\w)", str(time_end), current_inst)
-                raw_expr.append("".join([f"between(t, {time_start}, {time_end})*", current_inst]))
+                current_inst = re.sub(r"(?<!\w)(ts|start)(?!\w)", str(time_start), current_inst)
+                current_inst = re.sub(r"(?<!\w)(te|end)(?!\w)", str(time_end), current_inst)
+                raw_expr.append("".join(["(", f"between(t, {time_start}, {time_end})*", current_inst, ")"]))
                 time_start = time_end
             pattern_length.append(time_end)
         expr_inst = "".join(["+".join(raw_expr), "\':"])
@@ -77,6 +78,7 @@ class Tracker:
                 f"{self.aeval_init}"
                 f"{expr_inst}"
                 f"d={duration}\" "
+                f"-filter:a volume={self.volume} "
                 f"{self.end}")
         return expr
     def render(self):
