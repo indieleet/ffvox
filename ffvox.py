@@ -34,6 +34,8 @@ class Tracker:
         f|freq|frequency
         l|len|length
         v|vel|velocity
+        ts|start
+        te|end
         """
         self.raw_inst.append(inst)
         return len(self.raw_inst) - 1
@@ -55,9 +57,16 @@ class Tracker:
                     length = line[1]
                     velocity = line[2]
                     continue
-                freq *= line[1]
-                length *= line[2]
-                velocity *= line[3]
+                if len(line) > 1:
+                    freq *= line[1]
+                if len(line) > 2:
+                    length *= line[2]
+                if len(line) > 3:
+                    velocity *= line[3]
+                if len(line) > 4:
+                    for i in range((len(line) - 4)//2):
+                        note_fx = line[i+4]
+                        note_fx_param = line[i+5]
                 time_end += length
                 current_inst = re.sub(r"(?<!\w)(f|freq|frequency)(?!\w)", str(freq), self.raw_inst[line[0]])
                 current_inst = re.sub(r"(?<!\w)(l|len|length)(?!\w)", str(length), current_inst)
