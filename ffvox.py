@@ -1,18 +1,21 @@
 from os import system
 from shutil import which
 import re
+import json
 
 class Tracker:
-    def __init__(self):
+    with open("config.json", "r") as raw_config:
+        config = json.load(raw_config)
+    def __init__(self, config=config):
         self.raw_exp = []
         self.raw_pattern = []
         self.raw_inst = []
         self.start = "ffmpeg "
         self.aeval_init = "-f lavfi -i \"aevalsrc=\'"
-        self.overwrite = True
-        self.duration = -1
+        self.overwrite = config.get("overwrite", True)
+        self.duration = config.get("duration", -1)
         self.end = "out.wav"
-        self.volume = 1
+        self.volume = config.get("volume", 1)
           
     def add_pattern(self, pattern: list) -> int:
         """
