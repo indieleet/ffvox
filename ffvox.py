@@ -1,21 +1,20 @@
 from os import system
 from shutil import which
 import re
-import json
 
 class Tracker:
-    with open("config.json", "r") as raw_config:
-        config = json.load(raw_config)
-    def __init__(self, config=config):
+    def __init__(self, volume: float = 1,
+                 duration: float = -1, 
+                 overwrite: bool = True):
         self.raw_exp = []
         self.raw_pattern = []
         self.raw_inst = []
         self.start = "ffmpeg "
         self.aeval_init = "-f lavfi -i \"aevalsrc=\'"
-        self.overwrite = config.get("overwrite", True)
-        self.duration = config.get("duration", -1)
+        self.overwrite = overwrite
+        self.duration = duration
         self.end = "out.wav"
-        self.volume = config.get("volume", 1)
+        self.volume = volume
           
     def add_pattern(self, pattern: list) -> int:
         """
@@ -25,7 +24,7 @@ class Tracker:
         [...],
         ...]
         Example:
-        [440,
+        [[440, 1, 1]
         [3/4, 2/3, 1/100, 0],
         [1, 1, 100, 0]]
         """
@@ -42,11 +41,17 @@ class Tracker:
         """
         self.raw_inst.append(inst)
         return len(self.raw_inst) - 1
+    def __re_insert(self, freq, length, velocity, time_start, time_end, line): 
+        current_inst = re.sub(r"(?<!\w)(f|freq|frequency)(?!\w)", str(freq), self.raw_inst[line[0]])
+        current_inst = re.sub(r"(?<!\w)(l|len|length)(?!\w)", str(length), current_inst)
+        current_inst = re.sub(r"(?<!\w)(v|vel|velocity)(?!\w)", str(velocity), current_inst)
+        current_inst = re.sub(r"(?<!\w)(ts|start)(?!\w)", str(time_start), current_inst)
+        current_inst = re.sub(r"(?<!\w)(te|end)(?!\w)", str(time_end), current_inst)
+        self.raw_exp.append("".join(["(", f"between(t, {time_start}, {time_end})*", current_inst, ")"]))
     def __eval(self) -> str:
         overwrite_tag = ""
         if self.overwrite:
             overwrite_tag = "-y "
-        raw_expr = []
         pattern_length = []  
         for current_pattern in self.raw_pattern:
             freq = 1
@@ -60,26 +65,26 @@ class Tracker:
                     length = line[1]
                     velocity = line[2]
                     continue
+                voice_life = True
                 if len(line) > 1:
                     freq *= line[1]
                 if len(line) > 2:
                     length *= line[2]
+                time_end += length
                 if len(line) > 3:
                     velocity *= line[3]
                 if len(line) > 4:
                     for i in range((len(line) - 4)//2):
                         note_fx = line[i+4]
                         note_fx_param = line[i+5]
-                time_end += length
-                current_inst = re.sub(r"(?<!\w)(f|freq|frequency)(?!\w)", str(freq), self.raw_inst[line[0]])
-                current_inst = re.sub(r"(?<!\w)(l|len|length)(?!\w)", str(length), current_inst)
-                current_inst = re.sub(r"(?<!\w)(v|vel|velocity)(?!\w)", str(velocity), current_inst)
-                current_inst = re.sub(r"(?<!\w)(ts|start)(?!\w)", str(time_start), current_inst)
-                current_inst = re.sub(r"(?<!\w)(te|end)(?!\w)", str(time_end), current_inst)
-                raw_expr.append("".join(["(", f"between(t, {time_start}, {time_end})*", current_inst, ")"]))
+                        if note_fx == 1:
+                            self.__re_insert(freq*note_fx_param, length, velocity, time_start, time_end, line)
+
+                if voice_life == True:
+                    self.__re_insert(freq, length, velocity, time_start, time_end, line)
                 time_start = time_end
             pattern_length.append(time_end)
-        expr_inst = "".join(["+".join(raw_expr), "\':"])
+        expr_inst = "".join(["+".join(self.raw_exp), "\':"])
         duration = 0
         if self.duration > 0:
             duration = self.duration
