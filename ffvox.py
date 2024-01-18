@@ -15,6 +15,9 @@ class Tracker:
         self.duration = duration
         self.end = "out.wav"
         self.volume = volume
+        self.v_mode = "rel"
+        self.f_mode = "rel"
+        self.l_mode = "rel"
           
     def add_pattern(self, pattern: list) -> int:
         """
@@ -67,12 +70,21 @@ class Tracker:
                     continue
                 voice_life = True
                 if len(line) > 1:
-                    freq *= line[1]
+                    if self.f_mode[0] == "r":
+                        freq = line[1]
+                    else:
+                        freq *= line[1]
                 if len(line) > 2:
-                    length *= line[2]
+                    if self.l_mode[0] == "r":
+                        length = line[2]
+                    else:
+                        length *= line[2]
                 time_end += length
                 if len(line) > 3:
-                    velocity *= line[3]
+                    if self.v_mode[0] == "c":
+                        velocity = line[3]
+                    else:    
+                        velocity *= line[3]
                 if len(line) > 4:
                     for i in range((len(line) - 4)//2):
                         note_fx = line[i+4]
