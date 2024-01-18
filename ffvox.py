@@ -5,7 +5,9 @@ import re
 class Tracker:
     def __init__(self, volume: float = 1,
                  duration: float = -1, 
-                 overwrite: bool = True):
+                 overwrite: bool = True,
+                 name: str = "out",
+                 form :str = "wav"):
         self.raw_exp = []
         self.raw_pattern = []
         self.raw_inst = []
@@ -13,8 +15,9 @@ class Tracker:
         self.aeval_init = "-f lavfi -i \"aevalsrc=\'"
         self.overwrite = overwrite
         self.duration = duration
-        self.end = "out.wav"
         self.volume = volume
+        self.name = name
+        self.form = form
         self.v_mode = "rel"
         self.f_mode = "rel"
         self.l_mode = "rel"
@@ -70,12 +73,12 @@ class Tracker:
                     continue
                 voice_life = True
                 if len(line) > 1:
-                    if self.f_mode[0] == "r":
+                    if self.f_mode[0] == "c":
                         freq = line[1]
                     else:
                         freq *= line[1]
                 if len(line) > 2:
-                    if self.l_mode[0] == "r":
+                    if self.l_mode[0] == "c":
                         length = line[2]
                     else:
                         length *= line[2]
@@ -108,7 +111,7 @@ class Tracker:
                 f"{expr_inst}"
                 f"d={duration}\" "
                 f"-filter:a volume={self.volume} "
-                f"{self.end}")
+                f"{self.name}.{self.form}")
         return expr
     def render(self):
         system(self.__eval())
